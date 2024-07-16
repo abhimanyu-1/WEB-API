@@ -30,5 +30,56 @@ namespace WEB_API.Controllers
             // Return a response with the created entity
             return CreatedAtAction(nameof(GetProperties), new { id = property.id }, property);
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, properties updatedProperty)
+        {
+            if (id != updatedProperty.id)
+            {
+                return BadRequest("Property ID mismatch");
+            }
+
+            var existingProperty = await _dbcontext.Properties.FindAsync(id);
+            if (existingProperty == null)
+            {
+                return NotFound("Property not found");
+            }
+
+            // Update the existing property's properties with the values from the updatedProperty
+            existingProperty.Name = updatedProperty.Name;
+            existingProperty.Description = updatedProperty.Description;
+            // Update other properties as needed
+
+            try
+            {
+                await _dbcontext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_dbcontext.Properties.Any(e => e.id == id))
+                {
+                    return NotFound("Property not found");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var existingProperty = await _dbcontext.Properties.FindAsync(id);
+            if (existingProperty == null)
+            {
+                return NotFound("Property not found");
+            }
+
+            _dbcontext.Properties.Remove(existingProperty);
+            await _dbcontext.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
